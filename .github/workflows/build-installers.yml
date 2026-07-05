@@ -1,0 +1,60 @@
+name: Build installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS DMG
+            os: macos-latest
+            bundles: dmg
+            artifact: needle-macos
+            paths: src-tauri/target/release/bundle/dmg/*.dmg
+          - name: Windows EXE
+            os: windows-latest
+            bundles: nsis
+            artifact: needle-windows
+            paths: src-tauri/target/release/bundle/nsis/*.exe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Test frontend
+        run: corepack pnpm test
+
+      - name: Test Tauri backend
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Build installer
+        run: corepack pnpm tauri build --bundles ${{ matrix.bundles }} --no-sign
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.paths }}
+          if-no-files-found: error
