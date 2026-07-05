@@ -212,6 +212,15 @@ describe("bridge", () => {
     expect(invoke).toHaveBeenCalledWith("clear_chat_messages");
   });
 
+  it("opens the app data directory through the Tauri command layer", async () => {
+    const invoke = vi.fn().mockResolvedValue(undefined);
+    const api = createNeedleApi(invoke);
+
+    await expect(api.showAppDataDir()).resolves.toBeUndefined();
+
+    expect(invoke).toHaveBeenCalledWith("show_app_data_dir");
+  });
+
   it("passes chat message payload to append_chat_message", async () => {
     const metadata: ChatMessageMetadata = {
       query: "夜里写代码 粤语歌"

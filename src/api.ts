@@ -185,7 +185,8 @@ function createMockApi() {
         dbRowDeleted: hadSong
       };
     },
-    showInFinder: async () => undefined
+    showInFinder: async () => undefined,
+    showAppDataDir: async () => undefined
   };
 }
 

@@ -50,6 +50,7 @@ export function createNeedleApi(invoke: Invoke) {
       ),
     deleteSong: (songId: string) =>
       invoke<DeleteResult>("delete_song", { songId } satisfies DeleteSongArgs),
-    showInFinder: (path: string) => invoke<void>("show_in_finder", { path })
+    showInFinder: (path: string) => invoke<void>("show_in_finder", { path }),
+    showAppDataDir: () => invoke<void>("show_app_data_dir")
   };
 }

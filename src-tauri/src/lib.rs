@@ -196,7 +196,8 @@ pub fn run() {
             list_songs,
             update_song_metadata,
             delete_song,
-            show_in_finder
+            show_in_finder,
+            show_app_data_dir
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Needle");
@@ -638,6 +639,17 @@ fn delete_song(app: AppHandle, songId: String) -> Result<DeleteResult, DeleteErr
 fn show_in_finder(path: String) -> Result<(), String> {
     Command::new("open")
         .args(["-R", &path])
+        .status()
+        .map_err(to_string)?;
+    Ok(())
+}
+
+#[tauri::command]
+fn show_app_data_dir(app: AppHandle) -> Result<(), String> {
+    let dir = app.path().app_data_dir().map_err(to_string)?;
+    fs::create_dir_all(&dir).map_err(to_string)?;
+    Command::new("open")
+        .arg(dir)
         .status()
         .map_err(to_string)?;
     Ok(())

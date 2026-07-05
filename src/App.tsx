@@ -1257,6 +1257,20 @@ export function App() {
     setStatus("调试日志已清空");
   }
 
+  async function handleOpenDataDir() {
+    pushDebugLog("info", "settings", "打开数据目录开始");
+    try {
+      await needleApi.showAppDataDir();
+      setStatus("已打开数据目录");
+      pushDebugLog("info", "settings", "打开数据目录成功");
+    } catch (error) {
+      pushDebugLog("error", "settings", "打开数据目录失败", {
+        error: getErrorMessage(error)
+      });
+      setStatus(`打开数据目录失败：${getErrorMessage(error)}`);
+    }
+  }
+
   function handleClearChatRequest() {
     setPendingClearChat(true);
   }
@@ -1369,92 +1383,134 @@ export function App() {
 
           {view === "settings" && (
             <div className="settings-stack">
-              <section className="settings-grid">
-                <label>
-                  服务商
-                  <select
-                    value={settingsState.providerName}
-                    onChange={(event) =>
-                      setSettingsState((current) => ({ ...current, providerName: event.target.value }))
-                    }
-                  >
-                    <option>DeepSeek</option>
-                    <option>OpenAI 兼容</option>
-                    <option>自定义</option>
-                  </select>
-                </label>
-                <label>
-                  Base URL
-                  <input
-                    value={settingsState.baseUrl}
-                    onChange={(event) =>
-                      setSettingsState((current) => ({ ...current, baseUrl: event.target.value }))
-                    }
-                  />
-                </label>
-                <label>
-                  API Key
-                  <input
-                    type="password"
-                    placeholder={settingsState.apiKey ? maskApiKey(settingsState.apiKey) : "sk-..."}
-                    value={settingsState.apiKey}
-                    onChange={(event) =>
-                      setSettingsState((current) => ({ ...current, apiKey: event.target.value }))
-                    }
-                  />
-                </label>
-                <label>
-                  转换格式
-                  <select
-                    value={settingsState.audioFormat}
-                    onChange={(event) =>
-                      setSettingsState((current) => ({
-                        ...current,
-                        audioFormat: normalizeAudioFormat(event.target.value)
-                      }))
-                    }
-                  >
-                    <option value="m4a">m4a</option>
-                    <option value="mp3">mp3</option>
-                  </select>
-                </label>
-                <label>
-                  模型
-                  <select
-                    value={settingsState.selectedModelOption}
-                    onChange={(event) =>
-                      setSettingsState((current) => ({
-                        ...current,
-                        selectedModelOption: event.target.value,
-                        model: resolveSelectedModelValue(event.target.value, current.customModel)
-                      }))
-                    }
-                  >
-                    <option value="" disabled>先获取模型或选择自定义模型</option>
-                    {buildModelOptionItems(settingsState.models).map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  {settingsState.selectedModelOption === CUSTOM_MODEL_OPTION_VALUE && (
+              <section className="settings-section">
+                <div className="settings-section-header">
+                  <div>
+                    <h3>AI 服务</h3>
+                    <p>配置 OpenAI 兼容接口，API Key 只保存到 macOS 钥匙串。</p>
+                  </div>
+                  <button onClick={handleSaveSettings}>保存并测试</button>
+                </div>
+                <div className="settings-grid">
+                  <label>
+                    服务商
+                    <select
+                      value={settingsState.providerName}
+                      onChange={(event) =>
+                        setSettingsState((current) => ({ ...current, providerName: event.target.value }))
+                      }
+                    >
+                      <option>DeepSeek</option>
+                      <option>OpenAI 兼容</option>
+                      <option>自定义</option>
+                    </select>
+                  </label>
+                  <label>
+                    Base URL
                     <input
-                      value={settingsState.customModel}
+                      value={settingsState.baseUrl}
+                      onChange={(event) =>
+                        setSettingsState((current) => ({ ...current, baseUrl: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    API Key
+                    <input
+                      type="password"
+                      placeholder={settingsState.apiKey ? maskApiKey(settingsState.apiKey) : "sk-..."}
+                      value={settingsState.apiKey}
+                      onChange={(event) =>
+                        setSettingsState((current) => ({ ...current, apiKey: event.target.value }))
+                      }
+                    />
+                  </label>
+                </div>
+              </section>
+
+              <section className="settings-section">
+                <div className="settings-section-header">
+                  <div>
+                    <h3>模型</h3>
+                    <p>可以自动获取模型；接口不支持时，切到自定义后手动填写。</p>
+                  </div>
+                  <button className="secondary" onClick={handleFetchModels}>获取模型</button>
+                </div>
+                <div className="settings-grid">
+                  <label className="settings-wide">
+                    模型选择
+                    <select
+                      value={settingsState.selectedModelOption}
                       onChange={(event) =>
                         setSettingsState((current) => ({
                           ...current,
-                          customModel: event.target.value,
-                          model: event.target.value
+                          selectedModelOption: event.target.value,
+                          model: resolveSelectedModelValue(event.target.value, current.customModel)
                         }))
                       }
-                      placeholder="输入自定义模型名"
-                    />
-                  )}
-                </label>
-                <div className="settings-actions">
-                  <button className="secondary" onClick={handleFetchModels}>获取模型</button>
-                  <button onClick={handleSaveSettings}>保存并测试</button>
+                    >
+                      <option value="" disabled>先获取模型或选择自定义模型</option>
+                      {buildModelOptionItems(settingsState.models).map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {settingsState.selectedModelOption === CUSTOM_MODEL_OPTION_VALUE && (
+                      <input
+                        value={settingsState.customModel}
+                        onChange={(event) =>
+                          setSettingsState((current) => ({
+                            ...current,
+                            customModel: event.target.value,
+                            model: event.target.value
+                          }))
+                        }
+                        placeholder="输入自定义模型名"
+                      />
+                    )}
+                  </label>
                 </div>
+              </section>
+
+              <section className="settings-section">
+                <div className="settings-section-header">
+                  <div>
+                    <h3>转换</h3>
+                    <p>只影响之后新转换的歌曲，不会批量改动已有文件。</p>
+                  </div>
+                </div>
+                <div className="settings-grid">
+                  <label>
+                    转换格式
+                    <select
+                      value={settingsState.audioFormat}
+                      onChange={(event) =>
+                        setSettingsState((current) => ({
+                          ...current,
+                          audioFormat: normalizeAudioFormat(event.target.value)
+                        }))
+                      }
+                    >
+                      <option value="m4a">m4a - Apple 生态优先</option>
+                      <option value="mp3">mp3 - 通用兼容</option>
+                    </select>
+                  </label>
+                </div>
+              </section>
+
+              <section className="settings-section">
+                <div className="settings-section-header">
+                  <div>
+                    <h3>本地数据</h3>
+                    <p>聊天记录、候选缓存和设置保存在本机应用数据目录里。</p>
+                  </div>
+                </div>
+                <div className="settings-actions">
+                  <button className="secondary" onClick={handleClearChatRequest}>清空聊天记录</button>
+                  <button className="secondary" onClick={() => void handleOpenDataDir()}>打开数据目录</button>
+                </div>
+                <p className="settings-note">清空聊天只删除当前聊天和候选历史，不会删除已保存歌曲、本地音频或 AI 设置。</p>
               </section>
 
               <section className="debug-log-panel">
