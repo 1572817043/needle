@@ -1,0 +1,16 @@
+node_modules
+dist
+.pnpm-store
+src-tauri/target
+src-tauri/gen
+.DS_Store
+.env
+.env.*
+*.log
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+.codegraph
+.reasonix
+.rustup-install.log
