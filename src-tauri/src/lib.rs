@@ -376,7 +376,7 @@ async fn resolve_preview_stream(url: String) -> Result<String, String> {
     if let Some(parent) = output_path.parent() {
         fs::create_dir_all(parent).map_err(to_string)?;
     }
-    let args = build_preview_download_args(&url, &output_path);
+    let args = build_preview_download_args(&url, &output_path, &ffmpeg);
     let output = AsyncCommand::new(yt_dlp)
         .args(&args)
         .output()
@@ -488,6 +488,7 @@ async fn convert_audio(app: AppHandle, candidate: CandidateTrack) -> Result<Song
             &candidate.source_result.url,
             &download_template,
             &audio_format,
+            &ffmpeg,
         ))
         .output()
         .await
@@ -1740,9 +1741,10 @@ fn build_preview_output_path(id_hint: &str, title_hint: &str) -> PathBuf {
     unique_path(dir.join(filename))
 }
 
-fn build_preview_download_args(url: &str, output_path: &Path) -> Vec<String> {
+fn build_preview_download_args(url: &str, output_path: &Path, ffmpeg_path: &str) -> Vec<String> {
     vec![
         "--no-playlist".to_string(),
+        "--no-update".to_string(),
         "--socket-timeout".to_string(),
         "15".to_string(),
         "--extract-audio".to_string(),
@@ -1750,6 +1752,8 @@ fn build_preview_download_args(url: &str, output_path: &Path) -> Vec<String> {
         "m4a".to_string(),
         "--audio-quality".to_string(),
         "0".to_string(),
+        "--ffmpeg-location".to_string(),
+        ffmpeg_path.to_string(),
         "--postprocessor-args".to_string(),
         "ffmpeg:-t 30".to_string(),
         "-o".to_string(),
@@ -1797,14 +1801,22 @@ fn build_conversion_download_template(final_path: &Path, audio_format: &str) -> 
         .to_string()
 }
 
-fn build_convert_download_args(url: &str, output_template: &str, audio_format: &str) -> Vec<String> {
+fn build_convert_download_args(
+    url: &str,
+    output_template: &str,
+    audio_format: &str,
+    ffmpeg_path: &str,
+) -> Vec<String> {
     vec![
         "--no-playlist".to_string(),
+        "--no-update".to_string(),
         "-x".to_string(),
         "--audio-format".to_string(),
         normalize_audio_format(audio_format),
         "--audio-quality".to_string(),
         "0".to_string(),
+        "--ffmpeg-location".to_string(),
+        ffmpeg_path.to_string(),
         "--print".to_string(),
         "after_move:filepath".to_string(),
         "-o".to_string(),
@@ -2352,13 +2364,17 @@ mod tests {
     #[test]
     fn builds_preview_download_arguments_with_time_limit() {
         let output_path = Path::new("/tmp/needle-preview.m4a");
-        let args =
-            build_preview_download_args("https://www.bilibili.com/video/BV1xx411c7mD", output_path);
+        let args = build_preview_download_args(
+            "https://www.bilibili.com/video/BV1xx411c7mD",
+            output_path,
+            "/opt/homebrew/bin/ffmpeg",
+        );
 
         assert_eq!(
             args,
             vec![
                 "--no-playlist".to_string(),
+                "--no-update".to_string(),
                 "--socket-timeout".to_string(),
                 "15".to_string(),
                 "--extract-audio".to_string(),
@@ -2366,6 +2382,8 @@ mod tests {
                 "m4a".to_string(),
                 "--audio-quality".to_string(),
                 "0".to_string(),
+                "--ffmpeg-location".to_string(),
+                "/opt/homebrew/bin/ffmpeg".to_string(),
                 "--postprocessor-args".to_string(),
                 "ffmpeg:-t 30".to_string(),
                 "-o".to_string(),
@@ -2485,17 +2503,21 @@ mod tests {
             "https://www.bilibili.com/video/BV1xx411c7mD",
             "/Users/a0000/Music/song.needle-download.%(ext)s",
             "m4a",
+            "/opt/homebrew/bin/ffmpeg",
         );
 
         assert_eq!(
             args,
             vec![
                 "--no-playlist".to_string(),
+                "--no-update".to_string(),
                 "-x".to_string(),
                 "--audio-format".to_string(),
                 "m4a".to_string(),
                 "--audio-quality".to_string(),
                 "0".to_string(),
+                "--ffmpeg-location".to_string(),
+                "/opt/homebrew/bin/ffmpeg".to_string(),
                 "--print".to_string(),
                 "after_move:filepath".to_string(),
                 "-o".to_string(),
@@ -2511,9 +2533,12 @@ mod tests {
             "https://www.bilibili.com/video/BV1xx411c7mD",
             "/Users/a0000/Music/song.needle-download.%(ext)s",
             "mp3",
+            "/opt/homebrew/bin/ffmpeg",
         );
 
-        assert_eq!(args[3], "mp3");
+        assert_eq!(args[4], "mp3");
+        assert!(args.contains(&"--ffmpeg-location".to_string()));
+        assert!(args.contains(&"/opt/homebrew/bin/ffmpeg".to_string()));
     }
 
     #[test]
