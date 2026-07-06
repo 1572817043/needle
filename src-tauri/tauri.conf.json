@@ -20,7 +20,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' https://*.hdslb.com https://*.bilibili.com data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost https://*.hdslb.com https://*.bilibili.com"
+      "csp": "default-src 'self'; img-src 'self' https://*.hdslb.com https://*.bilibili.com data: blob:; media-src 'self' data: blob: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost https://*.hdslb.com https://*.bilibili.com"
     }
   },
   "bundle": {
