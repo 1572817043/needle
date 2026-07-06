@@ -1235,7 +1235,7 @@ export function App() {
 
   async function handleCopyDebugLogs() {
     if (debugLogs.length === 0) {
-      setStatus("没有可复制的调试日志");
+      setStatus("没有可复制的诊断日志");
       return;
     }
 
@@ -1246,7 +1246,7 @@ export function App() {
       }
 
       await navigator.clipboard.writeText(text);
-      setStatus("调试日志已复制");
+      setStatus("诊断日志已复制");
     } catch (error) {
       setStatus(`复制日志失败：${getErrorMessage(error)}`);
     }
@@ -1254,7 +1254,7 @@ export function App() {
 
   function handleClearDebugLogs() {
     setDebugLogs([]);
-    setStatus("调试日志已清空");
+    setStatus("诊断日志已清空");
   }
 
   async function handleOpenDataDir() {
@@ -1347,9 +1347,6 @@ export function App() {
               <h2>{view === "find" ? "AI 音乐助手" : view === "library" ? "我的歌曲" : "设置"}</h2>
               <p>{view === "library" ? librarySubtitle : status}</p>
             </div>
-            <span className="status-pill">
-              {runtimeMode === "tauri" ? "Tauri 桌面模式" : "浏览器预览模式"}
-            </span>
           </header>
 
           {view === "find" && (
@@ -1513,25 +1510,25 @@ export function App() {
                 <p className="settings-note">清空聊天只删除当前聊天和候选历史，不会删除已保存歌曲、本地音频或 AI 设置。</p>
               </section>
 
-              <section className="debug-log-panel">
-                <div className="debug-log-panel-header">
+              <details className="debug-log-panel">
+                <summary className="debug-log-panel-header">
                   <div>
-                    <h3>调试日志</h3>
+                    <h3>诊断信息</h3>
                     <p>最近 {debugLogs.length} 条，最多保留 100 条</p>
                   </div>
                   <div className="debug-log-actions">
-                    <button className="secondary" onClick={() => void handleCopyDebugLogs()}>
+                    <button className="secondary" onClick={(e) => { e.stopPropagation(); void handleCopyDebugLogs(); }}>
                       复制日志
                     </button>
-                    <button className="secondary" onClick={handleClearDebugLogs}>
+                    <button className="secondary" onClick={(e) => { e.stopPropagation(); handleClearDebugLogs(); }}>
                       清空日志
                     </button>
                   </div>
-                </div>
+                </summary>
 
                 <div className="debug-log-list">
                   {visibleDebugLogs.length === 0 ? (
-                    <div className="empty-state">还没有调试日志。</div>
+                    <div className="empty-state">还没有诊断日志。</div>
                   ) : (
                     visibleDebugLogs.map((entry) => (
                       <article className="debug-log-row" key={entry.id}>
@@ -1551,7 +1548,7 @@ export function App() {
                     ))
                   )}
                 </div>
-              </section>
+              </details>
             </div>
           )}
 
@@ -1827,7 +1824,6 @@ function SongList({
             <strong>歌曲库</strong>
             <span>共 {totalCount ?? songs.length} 首</span>
           </div>
-          <span className="song-list-hint">点击播放后会高亮当前歌曲</span>
         </div>
       )}
       {songs.map((song) => {

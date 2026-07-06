@@ -648,6 +648,12 @@ select {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.debug-log-panel-header::-webkit-details-marker {
+  display: none;
 }
 
 .debug-log-panel-header h3 {
